@@ -1,0 +1,24 @@
+# Maven
+target/
+
+# Node.js
+node_modules/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Base de données locale H2
+data/
+*.mv.db
+*.trace.db
+
+# Mac
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
