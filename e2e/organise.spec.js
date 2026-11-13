@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 const unique = prefix => `${prefix} ${Date.now()}`;
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'Toutes les tâches' })).toBeVisible();
   await expect(page.locator('#connection')).toContainText('API connectée');
 });
