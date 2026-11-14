@@ -1,35 +1,28 @@
 const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
-  testDir: './e2e',
+  testDir: './tests/e2e',
   fullyParallel: false,
-
-  reporter: [
-    ['list'],
-    ['html', { outputFolder: 'playwright-report', open: 'never' }]
-  ],
+  workers: 1,
+  reporter: 'list',
 
   use: {
-    baseURL: 'http://127.0.0.1:8081',
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure'
+    baseURL: 'http://127.0.0.1:8082',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
   },
 
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
-    }
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
 
   webServer: {
-    command: 'mvn -q spring-boot:run',
-    cwd: __dirname,
-    url: 'http://127.0.0.1:8081',
-    reuseExistingServer: !process.env.CI,
+    command: 'mvn spring-boot:run -Dspring-boot.run.profiles=test -Dspring-boot.run.arguments=--server.port=8082',
+    url: 'http://127.0.0.1:8082',
+    reuseExistingServer: false,
     timeout: 120000,
-    env: {
-      SERVER_PORT: '8081'
-    }
-  }
+  },
 });

@@ -1,0 +1,54 @@
+
+# language: fr
+
+Fonctionnalité: Gestion des comptes et protection des données utilisateurs
+  En tant qu'utilisateur d'Organise
+  Je veux pouvoir gérer mon compte et mes données en toute sécurité
+  Afin que mes projets et mes tâches restent privés.
+
+  Scénario: Inscription d'un nouvel utilisateur
+    Et que je ne possède pas encore de compte
+    Quand je m'inscris avec un nom, une adresse email et un mot de passe valides
+    Alors mon compte est créé
+    Et mes informations personnelles sont retournées sans mon mot de passe
+
+  Scénario: Refus d'une inscription avec une adresse email déjà utilisée
+    Et qu'un compte existe déjà avec cette adresse email
+    Quand je tente de créer un autre compte avec cette adresse email
+    Alors l'inscription est refusée
+
+  Scénario: Connexion avec des identifiants corrects
+    Et que je possède un compte
+    Quand je me connecte avec mon adresse email et mon mot de passe corrects
+    Alors je suis authentifié
+    Et une session utilisateur est créée
+
+  Scénario: Refus de connexion avec un mot de passe incorrect
+    Et que je possède un compte
+    Quand je tente de me connecter avec un mauvais mot de passe
+    Alors la connexion est refusée
+
+  Scénario: Déconnexion d'un utilisateur
+    Et que je suis connecté à mon compte
+    Quand je me déconnecte
+    Alors ma session est terminée
+    Et je ne peux plus accéder aux ressources privées
+
+  Scénario: Refus d'accès aux ressources sans authentification
+    Et que je ne suis pas connecté
+    Quand je tente de consulter mes projets
+    Alors l'accès est refusé
+
+  Scénario: Isolation des projets entre deux utilisateurs
+    Et que deux utilisateurs possèdent chacun un compte
+    Et que chaque utilisateur possède un projet privé
+    Quand le premier utilisateur consulte le projet du second
+    Alors l'accès est refusé
+    Et le projet du second utilisateur reste intact
+
+  Scénario: Isolation des tâches entre deux utilisateurs
+    Et que deux utilisateurs possèdent chacun un compte
+    Et que chaque utilisateur possède un projet avec une tâche
+    Quand le premier utilisateur tente de consulter la tâche du second
+    Alors l'accès est refusé
+    Et la tâche du second utilisateur reste intacte

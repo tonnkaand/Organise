@@ -2,6 +2,28 @@
   "name": "organise-browser-tests",
   "version": "1.0.0",
   "private": true,
-  "scripts": {"test:e2e": "playwright test"},
-  "devDependencies": {"@playwright/test": "^1.52.0"}
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1"
+  },
+  "description": "Application de gestion de tâches : Java 21, Spring Boot REST, H2, interface HTML/CSS/JS et cache IndexedDB.",
+  "main": "playwright.config.js",
+  "dependencies": {
+    "playwright": "^1.65.0",
+    "playwright-core": "^1.65.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tonnkaand/Organise.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tonnkaand/Organise/issues"
+  },
+  "homepage": "https://github.com/tonnkaand/Organise#readme"
 }

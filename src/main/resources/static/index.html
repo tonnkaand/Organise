@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="fr">
 <head>
@@ -10,63 +11,350 @@
   <script src="/app.js" defer></script>
 </head>
 <body>
-  <div class="app-shell">
+
+  <!-- AUTHENTIFICATION -->
+  <main id="auth-view" class="auth-view" hidden>
+    <section class="auth-card">
+
+      <a class="brand auth-brand" href="#" aria-label="Organise">
+        <span class="brand-mark">O</span>
+        <span>organise<span class="brand-dot">.</span></span>
+      </a>
+
+      <div class="auth-heading">
+        <p class="eyebrow">VOTRE ESPACE PERSONNEL</p>
+        <h1 id="auth-title">Bienvenue sur Organise</h1>
+        <p id="auth-description">
+          Connectez-vous pour retrouver votre organisation.
+        </p>
+      </div>
+
+      <!-- FORMULAIRE DE CONNEXION -->
+      <form id="login-form" class="auth-form">
+
+        <label for="login-email">Adresse e-mail</label>
+        <input
+          id="login-email"
+          type="email"
+          autocomplete="email"
+          maxlength="150"
+          placeholder="exemple@email.com"
+          required
+        >
+
+        <label for="login-password">Mot de passe</label>
+        <input
+          id="login-password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Votre mot de passe"
+          required
+        >
+
+        <p id="login-error" class="form-error" role="alert"></p>
+
+        <button type="submit" class="primary-button auth-submit">
+          Se connecter
+        </button>
+
+        <p class="auth-switch">
+          Vous n'avez pas encore de compte ?
+          <button type="button" id="show-register">Créer un compte</button>
+        </p>
+      </form>
+
+      <!-- FORMULAIRE D'INSCRIPTION -->
+      <form id="register-form" class="auth-form" hidden>
+
+        <label for="register-name">Nom complet</label>
+        <input
+          id="register-name"
+          type="text"
+          autocomplete="name"
+          maxlength="100"
+          placeholder="Votre nom"
+          required
+        >
+
+        <label for="register-email">Adresse e-mail</label>
+        <input
+          id="register-email"
+          type="email"
+          autocomplete="email"
+          maxlength="150"
+          placeholder="exemple@email.com"
+          required
+        >
+
+        <label for="register-password">Mot de passe</label>
+        <input
+          id="register-password"
+          type="password"
+          autocomplete="new-password"
+          minlength="8"
+          maxlength="72"
+          placeholder="Au moins 8 caractères"
+          required
+        >
+
+        <p id="register-error" class="form-error" role="alert"></p>
+
+        <button type="submit" class="primary-button auth-submit">
+          Créer mon compte
+        </button>
+
+        <p class="auth-switch">
+          Vous avez déjà un compte ?
+          <button type="button" id="show-login">Se connecter</button>
+        </p>
+      </form>
+
+      <p class="auth-footer">
+        Organise. · Votre espace, vos priorités.
+      </p>
+
+    </section>
+  </main>
+
+  <!-- APPLICATION -->
+  <div class="app-shell" id="app-shell" hidden>
+
     <aside class="sidebar" aria-label="Navigation principale">
-      <a class="brand" href="#accueil" aria-label="Organise, accueil"><span class="brand-mark">O</span><span>organise<span class="brand-dot">.</span></span></a>
+      <a class="brand" href="#accueil" aria-label="Organise, accueil">
+        <span class="brand-mark">O</span>
+        <span>organise<span class="brand-dot">.</span></span>
+      </a>
+
       <div class="workspace-label">ESPACE DE TRAVAIL</div>
+
       <nav class="main-nav">
-        <button class="nav-link active" id="nav-all" data-view="all"><span class="nav-icon">▦</span> Toutes les tâches <span class="nav-count" id="all-count">0</span></button>
-        <button class="nav-link" id="nav-today" data-view="today"><span class="nav-icon">◷</span> À échéance aujourd'hui</button>
-        <button class="nav-link" id="nav-late" data-view="late"><span class="nav-icon">⚑</span> En retard <span class="nav-count alert-count" id="late-count">0</span></button>
+        <button class="nav-link active" id="nav-all" data-view="all">
+          <span class="nav-icon">▦</span>
+          Toutes les tâches
+          <span class="nav-count" id="all-count">0</span>
+        </button>
+
+        <button class="nav-link" id="nav-today" data-view="today">
+          <span class="nav-icon">◷</span>
+          À échéance aujourd'hui
+        </button>
+
+        <button class="nav-link" id="nav-late" data-view="late">
+          <span class="nav-icon">⚑</span>
+          En retard
+          <span class="nav-count alert-count" id="late-count">0</span>
+        </button>
       </nav>
-      <div class="sidebar-section-head"><span>MES PROJETS</span><button class="icon-button" id="new-project-open" aria-label="Ajouter un projet" title="Ajouter un projet">＋</button></div>
-      <div id="projects" class="project-list" aria-label="Liste des projets"></div>
-      <div class="sidebar-bottom"><span class="online-indicator" id="connection-dot"></span><span id="connection">Connexion au serveur…</span></div>
+
+      <div class="sidebar-section-head">
+        <span>MES PROJETS</span>
+        <button class="icon-button" id="new-project-open"
+                aria-label="Ajouter un projet">＋</button>
+      </div>
+
+      <div id="projects" class="project-list"
+           aria-label="Liste des projets"></div>
+
+      <div class="sidebar-bottom">
+        <span class="online-indicator" id="connection-dot"></span>
+        <span id="connection">Connexion au serveur…</span>
+      </div>
     </aside>
 
     <main class="main-content">
+
       <header class="topbar">
-        <div><p class="eyebrow" id="date-label">VOTRE ESPACE DE TRAVAIL</p><h1 id="page-title">Toutes les tâches</h1></div>
-        <div class="topbar-actions"><span class="sync-label" id="sync-label">Synchronisation active</span><button class="primary-button" id="new-task-open"><span>＋</span> Nouvelle tâche</button></div>
+        <div>
+          <p class="eyebrow" id="date-label">VOTRE ESPACE DE TRAVAIL</p>
+          <h1 id="page-title">Toutes les tâches</h1>
+        </div>
+
+        <div class="topbar-actions">
+          <span class="sync-label" id="sync-label">
+            Synchronisation active
+          </span>
+
+          <span id="user-name" class="user-name"></span>
+
+          <button type="button" id="logout-button"
+                  class="secondary-button">
+            Déconnexion
+          </button>
+
+          <button class="primary-button" id="new-task-open">
+            <span>＋</span> Nouvelle tâche
+          </button>
+        </div>
       </header>
 
       <section class="stats-grid" aria-label="Résumé de votre activité">
-        <article class="stat-card"><div class="stat-icon icon-total">▤</div><div><p>Total des tâches</p><strong id="stat-total">0</strong></div><span class="stat-note">dans vos projets</span></article>
-        <article class="stat-card"><div class="stat-icon icon-progress">◷</div><div><p>En cours</p><strong id="stat-progress">0</strong></div><span class="stat-note">à poursuivre</span></article>
-        <article class="stat-card"><div class="stat-icon icon-done">✓</div><div><p>Terminées</p><strong id="stat-done">0</strong></div><span class="stat-note">bien joué !</span></article>
-        <article class="stat-card"><div class="stat-icon icon-late">!</div><div><p>En retard</p><strong id="stat-late">0</strong></div><span class="stat-note">à ne pas oublier</span></article>
+        <article class="stat-card">
+          <div class="stat-icon icon-total">▤</div>
+          <div><p>Total des tâches</p><strong id="stat-total">0</strong></div>
+          <span class="stat-note">dans vos projets</span>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-icon icon-progress">◷</div>
+          <div><p>En cours</p><strong id="stat-progress">0</strong></div>
+          <span class="stat-note">à poursuivre</span>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-icon icon-done">✓</div>
+          <div><p>Terminées</p><strong id="stat-done">0</strong></div>
+          <span class="stat-note">bien joué !</span>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-icon icon-late">!</div>
+          <div><p>En retard</p><strong id="stat-late">0</strong></div>
+          <span class="stat-note">à ne pas oublier</span>
+        </article>
       </section>
 
       <section class="content-panel">
         <div class="section-toolbar">
-          <div><h2 id="list-title">Votre organisation</h2><p id="list-subtitle">Retrouvez et gérez toutes vos tâches.</p></div>
-          <div class="filters"><label class="search-box"><span>⌕</span><input id="search" type="search" placeholder="Rechercher une tâche…" aria-label="Rechercher une tâche"></label><select id="filter" aria-label="Filtrer par statut"><option value="">Tous les statuts</option><option value="TODO">À faire</option><option value="IN_PROGRESS">En cours</option><option value="DONE">Terminées</option></select><select id="sort" aria-label="Trier les tâches"><option value="due">Échéance</option><option value="priority">Priorité</option><option value="newest">Plus récentes</option><option value="title">Ordre alphabétique</option></select></div>
+          <div>
+            <h2 id="list-title">Votre organisation</h2>
+            <p id="list-subtitle">Retrouvez et gérez toutes vos tâches.</p>
+          </div>
+
+          <div class="filters">
+            <label class="search-box">
+              <span>⌕</span>
+              <input id="search" type="search"
+                     placeholder="Rechercher une tâche…"
+                     aria-label="Rechercher une tâche">
+            </label>
+
+            <select id="filter" aria-label="Filtrer par statut">
+              <option value="">Tous les statuts</option>
+              <option value="TODO">À faire</option>
+              <option value="IN_PROGRESS">En cours</option>
+              <option value="DONE">Terminées</option>
+            </select>
+
+            <select id="sort" aria-label="Trier les tâches">
+              <option value="due">Échéance</option>
+              <option value="priority">Priorité</option>
+              <option value="newest">Plus récentes</option>
+              <option value="title">Ordre alphabétique</option>
+            </select>
+          </div>
         </div>
-        <div class="task-list" id="tasks" aria-live="polite"><div class="loading-state">Chargement de vos tâches…</div></div>
+
+        <div class="task-list" id="tasks" aria-live="polite">
+          <div class="loading-state">Chargement de vos tâches…</div>
+        </div>
       </section>
-      <footer class="page-footer"><span>Organise<span class="brand-dot">.</span> · Votre espace, vos priorités.</span><span>Vos données sont enregistrées sur le serveur et mises en cache dans ce navigateur.</span></footer>
+
+      <footer class="page-footer">
+        <span>Organise<span class="brand-dot">.</span> · Votre espace, vos priorités.</span>
+        <span>Vos données sont enregistrées sur le serveur et mises en cache dans ce navigateur.</span>
+      </footer>
+
     </main>
   </div>
 
+  <!-- MODALE TÂCHE -->
   <dialog class="modal" id="task-modal" aria-labelledby="task-modal-title">
     <form id="task-form" class="modal-form">
-      <div class="modal-head"><div><p class="eyebrow">GESTION DES TÂCHES</p><h2 id="task-modal-title">Créer une tâche</h2></div><button type="button" class="icon-button close-modal" data-close="task-modal" aria-label="Fermer">×</button></div>
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">GESTION DES TÂCHES</p>
+          <h2 id="task-modal-title">Créer une tâche</h2>
+        </div>
+        <button type="button" class="icon-button close-modal"
+                data-close="task-modal" aria-label="Fermer">×</button>
+      </div>
+
       <input type="hidden" id="task-id">
-      <label for="title">Titre de la tâche <span class="required">*</span></label><input id="title" name="title" maxlength="150" placeholder="Ex. Préparer la présentation" required>
-      <label for="description">Description <span class="optional">(facultatif)</span></label><textarea id="description" name="description" maxlength="2000" rows="3" placeholder="Ajoutez quelques détails utiles…"></textarea>
-      <div class="form-grid"><div><label for="project">Projet <span class="required">*</span></label><select id="project" name="projectId" required></select></div><div><label for="priority">Priorité</label><select id="priority" name="priority"><option value="LOW">Basse</option><option value="MEDIUM" selected>Moyenne</option><option value="HIGH">Urgente</option></select></div><div><label for="status">Statut</label><select id="status" name="status"><option value="TODO">À faire</option><option value="IN_PROGRESS">En cours</option><option value="DONE">Terminée</option></select></div><div><label for="due">Date d'échéance</label><input id="due" name="dueDate" type="date"></div></div>
+
+      <label for="title">Titre de la tâche <span class="required">*</span></label>
+      <input id="title" name="title" maxlength="150"
+             placeholder="Ex. Préparer la présentation" required>
+
+      <label for="description">Description <span class="optional">(facultatif)</span></label>
+      <textarea id="description" name="description" maxlength="2000"
+                rows="3" placeholder="Ajoutez quelques détails utiles…"></textarea>
+
+      <div class="form-grid">
+        <div>
+          <label for="project">Projet <span class="required">*</span></label>
+          <select id="project" name="projectId" required></select>
+        </div>
+
+        <div>
+          <label for="priority">Priorité</label>
+          <select id="priority" name="priority">
+            <option value="LOW">Basse</option>
+            <option value="MEDIUM" selected>Moyenne</option>
+            <option value="HIGH">Urgente</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="status">Statut</label>
+          <select id="status" name="status">
+            <option value="TODO">À faire</option>
+            <option value="IN_PROGRESS">En cours</option>
+            <option value="DONE">Terminée</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="due">Date d'échéance</label>
+          <input id="due" name="dueDate" type="date">
+        </div>
+      </div>
+
       <p class="form-error" id="task-error" role="alert"></p>
-      <div class="modal-actions"><button type="button" class="secondary-button" data-close="task-modal">Annuler</button><button class="primary-button" id="task-submit" type="submit">Créer la tâche</button></div>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-button"
+                data-close="task-modal">Annuler</button>
+        <button class="primary-button" id="task-submit" type="submit">
+          Créer la tâche
+        </button>
+      </div>
     </form>
   </dialog>
 
-  <dialog class="modal compact-modal" id="project-modal" aria-labelledby="project-modal-title">
-    <form id="project-form" class="modal-form"><div class="modal-head"><div><p class="eyebrow">VOTRE ESPACE</p><h2 id="project-modal-title">Nouveau projet</h2></div><button type="button" class="icon-button close-modal" data-close="project-modal" aria-label="Fermer">×</button></div>
-      <label for="project-name">Nom du projet <span class="required">*</span></label><input type="hidden" id="project-id"><input id="project-name" maxlength="100" placeholder="Ex. Travail, Études…" required>
-      <label for="project-description">Description <span class="optional">(facultatif)</span></label><textarea id="project-description" maxlength="500" rows="3" placeholder="À quoi sert ce projet ?"></textarea>
-      <p class="form-error" id="project-error" role="alert"></p><div class="modal-actions"><button type="button" class="secondary-button" data-close="project-modal">Annuler</button><button class="primary-button" type="submit">Créer le projet</button></div>
+  <!-- MODALE PROJET -->
+  <dialog class="modal compact-modal" id="project-modal"
+          aria-labelledby="project-modal-title">
+    <form id="project-form" class="modal-form">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">VOTRE ESPACE</p>
+          <h2 id="project-modal-title">Nouveau projet</h2>
+        </div>
+        <button type="button" class="icon-button close-modal"
+                data-close="project-modal" aria-label="Fermer">×</button>
+      </div>
+
+      <label for="project-name">Nom du projet <span class="required">*</span></label>
+      <input type="hidden" id="project-id">
+      <input id="project-name" maxlength="100"
+             placeholder="Ex. Travail, Études…" required>
+
+      <label for="project-description">Description <span class="optional">(facultatif)</span></label>
+      <textarea id="project-description" maxlength="500"
+                rows="3" placeholder="À quoi sert ce projet ?"></textarea>
+
+      <p class="form-error" id="project-error" role="alert"></p>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-button"
+                data-close="project-modal">Annuler</button>
+        <button class="primary-button" type="submit">Créer le projet</button>
+      </div>
     </form>
   </dialog>
-  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="toast-region" id="toast-region"
+       aria-live="polite" aria-atomic="true"></div>
+
 </body>
 </html>

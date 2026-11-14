@@ -1,0 +1,665 @@
+
+package com.todo.bdd.steps;
+
+import java.util.UUID;
+
+import org.junit.jupiter.api.Assertions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.cucumber.java.Before;
+import io.cucumber.java.fr.Alors;
+import io.cucumber.java.fr.Et;
+import io.cucumber.java.fr.Quand;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpSession;
+
+public class UserManagementSteps {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private String emailA;
+    private String emailB;
+
+    private final String password = "MotDePasse123";
+
+    private MockHttpSession session;
+    private MvcResult result;
+
+    private Long projectAId;
+    private Long projectBId;
+    private Long taskAId;
+    private Long taskBId;
+
+    private final String csrfCookieName = "XSRF-TOKEN";
+
+    // --------------------------------------------------
+    // INITIALISATION DE CHAQUE SCÉNARIO
+    // --------------------------------------------------
+
+    @Before
+    public void initialiserScenario() {
+
+        String unique = UUID.randomUUID()
+                .toString()
+                .substring(0, 8);
+
+        emailA = "utilisateurA-" + unique + "@example.com";
+        emailB = "utilisateurB-" + unique + "@example.com";
+
+        session = null;
+        result = null;
+
+        projectAId = null;
+        projectBId = null;
+
+        taskAId = null;
+        taskBId = null;
+    }
+
+    // --------------------------------------------------
+    // OUTILS COMMUNS
+    // --------------------------------------------------
+
+    private MvcResult envoyerAvecCsrf(
+            MockHttpServletRequestBuilder requete
+    ) throws Exception {
+
+        MockHttpServletRequestBuilder csrfRequest =
+                get("/api/auth/csrf");
+
+        if (session != null) {
+            csrfRequest.session(session);
+        }
+
+        MvcResult csrfResult = mockMvc.perform(csrfRequest)
+                .andReturn();
+
+        Assertions.assertEquals(
+                200,
+                csrfResult.getResponse().getStatus(),
+                "Impossible de récupérer le token CSRF"
+        );
+
+        Cookie cookie = csrfResult.getResponse()
+                .getCookie(csrfCookieName);
+
+        String contenu = csrfResult.getResponse()
+                .getContentAsString();
+
+        JsonNode csrfBody = objectMapper.readTree(contenu);
+
+        String token = csrfBody.get("token").asText();
+
+        Assertions.assertNotNull(
+                cookie,
+                "Cookie CSRF absente"
+        );
+
+        requete.cookie(cookie)
+                .header("X-XSRF-TOKEN", token)
+                .contentType(MediaType.APPLICATION_JSON);
+
+        if (session != null) {
+            requete.session(session);
+        }
+
+        MvcResult resultat = mockMvc.perform(requete)
+                .andReturn();
+
+        HttpSession nouvelleSession =
+                resultat.getRequest().getSession(false);
+
+        if (nouvelleSession instanceof MockHttpSession) {
+            session = (MockHttpSession) nouvelleSession;
+        }
+
+        return resultat;
+    }
+
+    // --------------------------------------------------
+    // INSCRIPTION
+    // --------------------------------------------------
+
+    private void inscrire(String email) throws Exception {
+
+        String json = objectMapper.writeValueAsString(
+                new Inscription(
+                        "Utilisateur Test",
+                        email,
+                        password
+                )
+        );
+
+        result = envoyerAvecCsrf(
+                post("/api/auth/register")
+                        .content(json)
+        );
+    }
+
+    // --------------------------------------------------
+    // CONNEXION
+    // --------------------------------------------------
+
+    private void connecter(
+            String email,
+            String motDePasse
+    ) throws Exception {
+
+        String json = objectMapper.writeValueAsString(
+                new Connexion(email, motDePasse)
+        );
+
+        result = envoyerAvecCsrf(
+                post("/api/auth/login")
+                        .content(json)
+        );
+    }
+
+    // --------------------------------------------------
+    // CRÉATION D'UN PROJET
+    // --------------------------------------------------
+
+    private Long creerProjet(String nom) throws Exception {
+
+        String json = objectMapper.writeValueAsString(
+                new NouveauProjet(
+                        nom,
+                        "Projet privé de test"
+                )
+        );
+
+        MvcResult creation = envoyerAvecCsrf(
+                post("/api/projects")
+                        .content(json)
+        );
+
+        Assertions.assertEquals(
+                201,
+                creation.getResponse().getStatus(),
+                "La création du projet a échoué"
+        );
+
+        JsonNode body = objectMapper.readTree(
+                creation.getResponse().getContentAsString()
+        );
+
+        Assertions.assertNotNull(
+                body.get("id"),
+                "L'identifiant du projet est absent"
+        );
+
+        return body.get("id").asLong();
+    }
+
+    // --------------------------------------------------
+    // CRÉATION D'UNE TÂCHE
+    // --------------------------------------------------
+
+    private Long creerTache(
+            Long projectId,
+            String titre
+    ) throws Exception {
+
+        String json = """
+                {
+                    "title": "%s",
+                    "description": "Tâche privée de test",
+                    "projectId": %d,
+                    "priority": "HIGH",
+                    "status": "TODO",
+                    "dueDate": null
+                }
+                """.formatted(titre, projectId);
+
+        MvcResult creation = envoyerAvecCsrf(
+                post("/api/tasks")
+                        .content(json)
+        );
+
+        Assertions.assertEquals(
+                201,
+                creation.getResponse().getStatus(),
+                "La création de la tâche a échoué"
+        );
+
+        JsonNode body = objectMapper.readTree(
+                creation.getResponse().getContentAsString()
+        );
+
+        Assertions.assertNotNull(
+                body.get("id"),
+                "L'identifiant de la tâche est absent"
+        );
+
+        return body.get("id").asLong();
+    }
+
+    // --------------------------------------------------
+    // VÉRIFICATION DU STATUT HTTP
+    // --------------------------------------------------
+
+    private int statut() {
+        return result.getResponse().getStatus();
+    }
+
+    private void verifierAccesRefuse() {
+
+        Assertions.assertTrue(
+                statut() == 401
+                        || statut() == 403
+                        || statut() == 404,
+
+                "L'accès aurait dû être refusé. Statut reçu : "
+                        + statut()
+        );
+    }
+
+    // --------------------------------------------------
+    // OBJETS UTILISÉS POUR LES REQUÊTES JSON
+    // --------------------------------------------------
+
+    private record Inscription(
+            String name,
+            String email,
+            String password
+    ) {}
+
+    private record Connexion(
+            String email,
+            String password
+    ) {}
+
+    private record NouveauProjet(
+            String name,
+            String description
+    ) {}
+
+    // ==================================================
+    // SCÉNARIO 1 : INSCRIPTION D'UN NOUVEL UTILISATEUR
+    // ==================================================
+
+    @Et("que je ne possède pas encore de compte")
+    public void jeNePossedePasDeCompte() {
+
+        // L'adresse email unique a été préparée dans @Before.
+        Assertions.assertNotNull(emailA);
+    }
+
+    @Quand("je m'inscris avec un nom, une adresse email et un mot de passe valides")
+    public void jeMInscris() throws Exception {
+
+        inscrire(emailA);
+    }
+
+    @Alors("mon compte est créé")
+    public void monCompteEstCree() {
+
+        Assertions.assertEquals(
+                201,
+                statut(),
+                "Le compte aurait dû être créé"
+        );
+    }
+
+    @Et("mes informations personnelles sont retournées sans mon mot de passe")
+    public void informationsSansMotDePasse() throws Exception {
+
+        JsonNode body = objectMapper.readTree(
+                result.getResponse().getContentAsString()
+        );
+
+        Assertions.assertNotNull(body.get("id"));
+        Assertions.assertNotNull(body.get("name"));
+        Assertions.assertNotNull(body.get("email"));
+
+        Assertions.assertNull(body.get("password"));
+        Assertions.assertNull(body.get("passwordHash"));
+    }
+
+    // ==================================================
+    // SCÉNARIO 2 : EMAIL DÉJÀ UTILISÉ
+    // ==================================================
+
+    @Et("qu'un compte existe déjà avec cette adresse email")
+    public void compteExisteDeja() throws Exception {
+
+        inscrire(emailA);
+
+        Assertions.assertEquals(
+                201,
+                statut(),
+                "Le premier compte aurait dû être créé"
+        );
+    }
+
+    @Quand("je tente de créer un autre compte avec cette adresse email")
+    public void inscriptionAvecEmailExistant() throws Exception {
+
+        inscrire(emailA);
+    }
+
+    @Alors("l'inscription est refusée")
+    public void inscriptionRefusee() {
+
+        Assertions.assertTrue(
+                statut() == 400 || statut() == 409,
+                "L'inscription aurait dû être refusée"
+        );
+    }
+
+    // ==================================================
+    // SCÉNARIO 3 : CONNEXION RÉUSSIE
+    // ==================================================
+
+    @Et("que je possède un compte")
+    public void jePossedeUnCompte() throws Exception {
+
+        inscrire(emailA);
+
+        Assertions.assertEquals(
+                201,
+                statut(),
+                "Le compte de test aurait dû être créé"
+        );
+    }
+
+    @Quand("je me connecte avec mon adresse email et mon mot de passe corrects")
+    public void connexionAvecBonsIdentifiants() throws Exception {
+
+        connecter(emailA, password);
+    }
+
+    @Alors("je suis authentifié")
+    public void jeSuisAuthentifie() {
+
+        Assertions.assertEquals(
+                200,
+                statut(),
+                "La connexion aurait dû réussir"
+        );
+    }
+
+    @Et("une session utilisateur est créée")
+    public void sessionUtilisateurCreee() {
+
+        Assertions.assertNotNull(
+                session,
+                "La session utilisateur n'a pas été créée"
+        );
+    }
+
+    // ==================================================
+    // SCÉNARIO 4 : MAUVAIS MOT DE PASSE
+    // ==================================================
+
+    @Quand("je tente de me connecter avec un mauvais mot de passe")
+    public void connexionAvecMauvaisMotDePasse() throws Exception {
+
+        connecter(
+                emailA,
+                "MauvaisMotDePasse123"
+        );
+    }
+
+    @Alors("la connexion est refusée")
+    public void connexionRefusee() {
+
+        Assertions.assertEquals(
+                401,
+                statut(),
+                "La connexion aurait dû être refusée"
+        );
+    }
+
+    // ==================================================
+    // SCÉNARIO 5 : DÉCONNEXION
+    // ==================================================
+
+    @Et("que je suis connecté à mon compte")
+    public void jeSuisConnecte() throws Exception {
+
+        inscrire(emailA);
+
+        Assertions.assertEquals(201, statut());
+
+        connecter(emailA, password);
+
+        Assertions.assertEquals(
+                200,
+                statut(),
+                "La connexion aurait dû réussir"
+        );
+
+        Assertions.assertNotNull(
+                session,
+                "La session devrait exister après connexion"
+        );
+    }
+
+    @Quand("je me déconnecte")
+    public void jeMeDeconnecte() throws Exception {
+
+        result = envoyerAvecCsrf(
+                post("/api/auth/logout")
+        );
+
+        session = null;
+    }
+
+    @Alors("ma session est terminée")
+    public void maSessionEstTerminee() {
+
+        Assertions.assertEquals(
+                204,
+                statut(),
+                "La déconnexion aurait dû réussir"
+        );
+    }
+
+    @Et("je ne peux plus accéder aux ressources privées")
+    public void accesPriveApresDeconnexion() throws Exception {
+
+        result = mockMvc.perform(
+                get("/api/projects")
+        ).andReturn();
+
+        Assertions.assertEquals(
+                401,
+                statut(),
+                "Un utilisateur déconnecté ne doit plus accéder aux projets"
+        );
+    }
+
+    // ==================================================
+    // SCÉNARIO 6 : ACCÈS SANS AUTHENTIFICATION
+    // ==================================================
+
+    @Et("que je ne suis pas connecté")
+    public void jeNeSuisPasConnecte() {
+
+        session = null;
+    }
+
+    @Quand("je tente de consulter mes projets")
+    public void consulterProjetsSansConnexion() throws Exception {
+
+        result = mockMvc.perform(
+                get("/api/projects")
+        ).andReturn();
+    }
+
+    @Alors("l'accès est refusé")
+    public void accesEstRefuse() {
+
+        verifierAccesRefuse();
+    }
+
+    // ==================================================
+    // SCÉNARIO 7 : ISOLATION DES PROJETS
+    // ==================================================
+
+    @Et("que deux utilisateurs possèdent chacun un compte")
+    public void deuxUtilisateursPossedentUnCompte()
+            throws Exception {
+
+        inscrire(emailA);
+
+        Assertions.assertEquals(201, statut());
+
+        session = null;
+
+        inscrire(emailB);
+
+        Assertions.assertEquals(201, statut());
+
+        session = null;
+    }
+
+    @Et("que chaque utilisateur possède un projet privé")
+    public void chaqueUtilisateurPossedeUnProjet()
+            throws Exception {
+
+        connecter(emailA, password);
+
+        Assertions.assertEquals(200, statut());
+
+        projectAId = creerProjet(
+                "Projet utilisateur A"
+        );
+
+        connecter(emailB, password);
+
+        Assertions.assertEquals(200, statut());
+
+        projectBId = creerProjet(
+                "Projet utilisateur B"
+        );
+    }
+
+    @Quand("le premier utilisateur consulte le projet du second")
+    public void premierUtilisateurConsulteProjetSecond()
+            throws Exception {
+
+        connecter(emailA, password);
+
+        Assertions.assertEquals(
+                200,
+                statut(),
+                "L'utilisateur A devrait pouvoir se connecter"
+        );
+
+        result = mockMvc.perform(
+                get("/api/projects/" + projectBId)
+                        .session(session)
+        ).andReturn();
+    }
+
+    @Alors("le projet du second utilisateur reste intact")
+    public void projetSecondResteIntact() throws Exception {
+
+        // Vérifier d'abord le refus d'accès pour A.
+        verifierAccesRefuse();
+
+        // Reconnexion de B pour vérifier que son projet existe toujours.
+        connecter(emailB, password);
+
+        Assertions.assertEquals(200, statut());
+
+        result = mockMvc.perform(
+                get("/api/projects/" + projectBId)
+                        .session(session)
+        ).andReturn();
+
+        Assertions.assertEquals(
+                200,
+                statut(),
+                "Le propriétaire doit toujours accéder à son projet"
+        );
+    }
+
+    // ==================================================
+    // SCÉNARIO 8 : ISOLATION DES TÂCHES
+    // ==================================================
+
+    @Et("que chaque utilisateur possède un projet avec une tâche")
+    public void chaqueUtilisateurPossedeUneTache()
+            throws Exception {
+
+        connecter(emailA, password);
+
+        Assertions.assertEquals(200, statut());
+
+        projectAId = creerProjet("Projet A");
+
+        taskAId = creerTache(
+                projectAId,
+                "Tâche privée A"
+        );
+
+        connecter(emailB, password);
+
+        Assertions.assertEquals(200, statut());
+
+        projectBId = creerProjet("Projet B");
+
+        taskBId = creerTache(
+                projectBId,
+                "Tâche privée B"
+        );
+    }
+
+    @Quand("le premier utilisateur tente de consulter la tâche du second")
+    public void premierUtilisateurConsulteTacheSecond()
+            throws Exception {
+
+        connecter(emailA, password);
+
+        Assertions.assertEquals(
+                200,
+                statut(),
+                "L'utilisateur A devrait pouvoir se connecter"
+        );
+
+        result = mockMvc.perform(
+                get("/api/tasks/" + taskBId)
+                        .session(session)
+        ).andReturn();
+    }
+
+    @Alors("la tâche du second utilisateur reste intacte")
+    public void tacheSecondResteIntacte() throws Exception {
+
+        // Vérifier d'abord le refus d'accès pour A.
+        verifierAccesRefuse();
+
+        // Reconnexion de B pour vérifier que sa tâche existe toujours.
+        connecter(emailB, password);
+
+        Assertions.assertEquals(200, statut());
+
+        result = mockMvc.perform(
+                get("/api/tasks/" + taskBId)
+                        .session(session)
+        ).andReturn();
+
+        Assertions.assertEquals(
+                200,
+                statut(),
+                "Le propriétaire doit toujours accéder à sa tâche"
+        );
+    }
+}

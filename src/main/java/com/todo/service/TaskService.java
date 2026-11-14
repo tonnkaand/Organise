@@ -1,14 +1,105 @@
+
 package com.todo.service;
-import com.todo.dto.TaskRequest; import com.todo.exception.NotFoundException; import com.todo.model.*;
-import com.todo.repository.TaskRepository; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
-@Service @Transactional public class TaskService {
- private final TaskRepository tasks; private final ProjectService projects;
- public TaskService(TaskRepository t,ProjectService p){tasks=t;projects=p;}
- public List<Task> findAll(){return tasks.findAll();}
- public List<Task> findByProject(Long id){projects.findById(id);return tasks.findByProjectId(id);}
- public Task findById(Long id){return tasks.findById(id).orElseThrow(()->new NotFoundException("Tâche introuvable: "+id));}
- public Task create(TaskRequest r){Project p=projects.findById(r.projectId());return tasks.save(new Task(r.title().trim(),r.description(),p,r.priority(),r.status(),r.dueDate()));}
- public Task update(Long id,TaskRequest r){Task t=findById(id);Project p=projects.findById(r.projectId());t.update(r.title().trim(),r.description(),p,r.priority(),r.status(),r.dueDate());return tasks.save(t);}
- public void delete(Long id){tasks.delete(findById(id));}
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.todo.dto.TaskRequest;
+import com.todo.exception.NotFoundException;
+import com.todo.model.Project;
+import com.todo.model.Task;
+import com.todo.repository.TaskRepository;
+
+@Service
+@Transactional
+public class TaskService {
+
+    private final TaskRepository tasks;
+    private final ProjectService projects;
+
+    public TaskService(TaskRepository tasks, ProjectService projects) {
+        this.tasks = tasks;
+        this.projects = projects;
+    }
+
+    // Afficher uniquement les tâches de l'utilisateur connecté
+    public List<Task> findAll() {
+
+        return tasks.findAllByProjectOwnerEmailIgnoreCase(
+                currentUserEmail()
+        );
+    }
+
+    // Afficher les tâches d'un projet appartenant à l'utilisateur
+    public List<Task> findByProject(Long projectId) {
+
+        projects.findById(projectId);
+
+        return tasks.findByProjectId(projectId);
+    }
+
+    // Rechercher une tâche appartenant à l'utilisateur
+    public Task findById(Long id) {
+
+        return tasks.findByIdAndProjectOwnerEmailIgnoreCase(
+                id,
+                currentUserEmail()
+        ).orElseThrow(() ->
+                new NotFoundException("Tâche introuvable : " + id)
+        );
+    }
+
+    // Créer une tâche dans l'un de ses propres projets
+    public Task create(TaskRequest request) {
+
+        Project project = projects.findById(request.projectId());
+
+        Task task = new Task(
+                request.title().trim(),
+                request.description(),
+                project,
+                request.priority(),
+                request.status(),
+                request.dueDate()
+        );
+
+        return tasks.save(task);
+    }
+
+    // Modifier une tâche uniquement si elle lui appartient
+    public Task update(Long id, TaskRequest request) {
+
+        Task task = findById(id);
+
+        // Vérifie également que le nouveau projet appartient à l'utilisateur
+        Project project = projects.findById(request.projectId());
+
+        task.update(
+                request.title().trim(),
+                request.description(),
+                project,
+                request.priority(),
+                request.status(),
+                request.dueDate()
+        );
+
+        return tasks.save(task);
+    }
+
+    // Supprimer uniquement ses propres tâches
+    public void delete(Long id) {
+
+        Task task = findById(id);
+
+        tasks.delete(task);
+    }
+
+    private String currentUserEmail() {
+        return org.springframework.security.core.context.SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+    }
 }
